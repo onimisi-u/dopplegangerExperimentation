@@ -1,0 +1,6 @@
+file 'output_segments/original_segment0-converted.mp4'
+file 'clip-1-converted.mp4'
+file 'output_segments/original_segment1-converted.mp4'
+file 'clip-2-converted.mp4'
+file 'output_segments/original_segment2-converted.mp4'
+file 'clip-3-converted.mp4'

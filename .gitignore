@@ -1,3 +1,5 @@
 .vscode
 .DS_Store
 vocab.txt
+*.mp3
+*.mp4

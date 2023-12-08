@@ -1,5 +1,4 @@
 import assemblyai as aai
-import cv2
 import os
 
 """ # Replace with your API token
@@ -38,74 +37,59 @@ transcriptWords = [
     {"text": 'solution', "start": 9876, "end": 10750, "confidence": 0.99181},
     {"text": 'for', "start": 11090, "end": 11790, "confidence": 0.99996},
     {"text": 'your', "start": 11940, "end": 12542, "confidence": 0.9998},
-    {"text": 'Purpose', "start": 12676, "end": 13500, "confidence": 0.98515}
+    {"text": 'Purpose', "start": 12676, "end": 13500, "confidence": 0.98515},
 ]
 
-# Function to split the video without modifying audio
-def split_video(video_path, start_time, end_time, output_path):
-    print(f"Splitting video from {start_time} to {end_time} seconds.")
+def slice_transcript_by_keywords(transcriptWords, keywords):
+    slices = []
+    start_index = 0
 
-    """ # Open the video file
-    cap = cv2.VideoCapture(video_path)
+    for i, word in enumerate(transcriptWords):
+        if word['text'] in keywords:
+            if i > start_index:
+                slices.append(transcriptWords[start_index:i])
+            start_index = i + 1
 
-    # Get the frame rate of the video
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    
-    # Calculate start and end frames
-    start_frame = int(start_time * fps)
-    end_frame = int(end_time * fps)
+    if start_index < len(transcriptWords) and start_index != len(transcriptWords) - 1:
+        slices.append(transcriptWords[start_index:])
 
-    # Set the starting frame of the video
-    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    return slices
 
-    # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (int(cap.get(3)), int(cap.get(4))))
+def get_start_end_times_of_slices(slices):
+    start_times = []
+    end_times = []
 
-    for frame_num in range(start_frame, end_frame):
-        ret, frame = cap.read()
-        if not ret:
-            break
-        out.write(frame)
+    for slice in slices:
+        if slice:
+            start_times.append(slice[0]['start'])
+            end_times.append(slice[-1]['end'])
 
-    cap.release()
-    out.release() """
-
-    # Use FFmpeg to copy audio from the original video to the output video segment
-    os.system(f'ffmpeg -i "{video_path}" -ss {start_time} -t {end_time - start_time} -c:v copy -c:a copy "{output_path}_with_audio.mp4"')
-
-def get_time_ranges(transcript_words, target_words):
-    time_ranges = []
-    for i in range(len(transcript_words) - 1):
-        if transcript_words[i + 1]['text'] in target_words:
-            time_range = (transcript_words[i]['start'], transcript_words[i]['end'])
-            time_ranges.append(time_range)
-    return time_ranges
+    return start_times, end_times
 
 # Your transcript data
 transcript = transcriptWords
 
 # Define the words to isolate
-words_to_isolate = ["Abracadabra", "Company", "Purpose"]
+keywords = ["Abracadabra", "Company", "Purpose"]
 
 # Video path
 video_path = 'second_video.mov'
 
-# Check if the file exists
-if os.path.exists(video_path):
-    print(f"The file {video_path} exists.")
-else:
-    print(f"The file {video_path} does not exist.")
+# Directory to save the output segments
+output_directory = 'output_segments'
 
-# Iterate through the transcript to split the video for the defined words
-for word in transcript:
-    if word['text'] in words_to_isolate:
-        start_time = word['start'] / 1000  # Convert to seconds
-        end_time = word['end'] / 1000  # Convert to seconds
-        output_path = f'segment_{word["text"]}.mp4'  # Output file named after the word
-        # split_video(video_path, start_time, end_time, output_path)
+# Create the output directory if it doesn't exist
+if not os.path.exists(output_directory):
+    os.makedirs(output_directory)
 
-# Get the time ranges for the words to isolate
-target_words = ["Abracadabra", "Company", "Purpose"]
-time_ranges = get_time_ranges(transcriptWords, target_words)
-print(time_ranges)
+slices = slice_transcript_by_keywords(transcriptWords, keywords)
+
+start_times, end_times = get_start_end_times_of_slices(slices)
+
+for i, (start_time, end_time) in enumerate(zip(start_times, end_times)):
+    print(f"Slice {i + 1}:")
+    print(f"Start Time: {start_time}")
+    print(f"End Time: {end_time}")
+    print("\n")
+    output_segment = os.path.join(output_directory, f'original_segment{i}.mp4')
+    os.system(f'ffmpeg -ss {start_time/1000} -t {(end_time/1000) - (start_time/1000)} -i "{video_path}" -c:v copy -c:a copy "{output_segment}"')
