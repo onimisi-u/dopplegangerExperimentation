@@ -93,3 +93,15 @@ for i, (start_time, end_time) in enumerate(zip(start_times, end_times)):
     print("\n")
     output_segment = os.path.join(output_directory, f'original_segment{i}.mp4')
     os.system(f'ffmpeg -ss {start_time/1000} -t {(end_time/1000) - (start_time/1000)} -i "{video_path}" -c:v copy -c:a copy "{output_segment}"')
+
+"""
+NEXT STEPS:
+- Once you have the segments that are not keywords, you need to create segments that are keywords in sieve
+- Once you have all the clips, you need standardize the clips to have the same encoding.
+    - You can do this by running the following command, run this command for all the video files:
+    - ffmpeg -i clip-1.mp4 -c:v libx264 -profile:v main -c:a aac -ac 2 -b:a 128k clip-1-converted.mp4
+- Once you have all the clips, you can add them to a text file called segments.txt
+- Once you have the segments.txt file, you need to run the following command:
+    - ffmpeg -f concat -safe 0 -i segments.txt -c copy output.mp4
+    - This will create a new video called output.mp4 that is the final video
+"""
